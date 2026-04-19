@@ -1,4 +1,3 @@
-// src/components/ExpenseForm.jsx
 import React, { useEffect, useMemo, useState } from "react";
 
 const DEFAULT_CATEGORIES = [
@@ -16,8 +15,6 @@ const DEFAULT_CATEGORIES = [
 ];
 
 const PAYMENT_METHODS = ["Cash", "UPI", "Card", "Bank Transfer"];
-const PAYMENT_STATUSES = ["Pending", "Advance Paid", "Partial", "Paid"];
-
 const CUSTOM_CATEGORY_VALUE = "__custom__";
 
 const getTodayDate = () => new Date().toISOString().split("T")[0];
@@ -32,6 +29,19 @@ const initialFormState = {
   paymentMethod: "Cash",
   vendor: "",
   notes: "",
+};
+
+const formatNumberWithCommas = (value) => {
+  if (value === "" || value === null || value === undefined) return "";
+
+  const number = Number(String(value).replace(/,/g, ""));
+  if (Number.isNaN(number)) return "";
+
+  return number.toLocaleString("en-IN");
+};
+
+const removeCommas = (value) => {
+  return String(value).replace(/,/g, "");
 };
 
 const ExpenseForm = ({
@@ -61,8 +71,15 @@ const ExpenseForm = ({
       setFormData({
         itemName: initialValues.itemName || "",
         category: incomingCategory,
-        amount: initialValues.amount ?? "",
-        paidAmount: initialValues.paidAmount ?? "",
+        amount:
+          initialValues.amount !== undefined && initialValues.amount !== null
+            ? String(initialValues.amount)
+            : "",
+        paidAmount:
+          initialValues.paidAmount !== undefined &&
+          initialValues.paidAmount !== null
+            ? String(initialValues.paidAmount)
+            : "",
         paymentStatus: initialValues.paymentStatus || "Pending",
         date: initialValues.date || getTodayDate(),
         paymentMethod: initialValues.paymentMethod || "Cash",
@@ -84,30 +101,25 @@ const ExpenseForm = ({
     }
   }, [initialValues, mergedCategories]);
 
+  const getPaymentStatus = (amountValue, paidAmountValue) => {
+    const amount = Number(amountValue || 0);
+    const paidAmount = Number(paidAmountValue || 0);
+
+    if (paidAmount <= 0) return "Pending";
+    if (amount > 0 && paidAmount >= amount) return "Paid";
+    if (paidAmount > 0 && paidAmount < amount) return "Partial";
+    return "Pending";
+  };
+
   const handleChange = (field, value) => {
-    let updatedValue = value;
-
-    if (field === "amount" || field === "paidAmount") {
-      updatedValue = value === "" ? "" : Math.max(Number(value), 0);
-    }
-
     setFormData((prev) => {
       const next = {
         ...prev,
-        [field]: updatedValue,
+        [field]: value,
       };
 
-      const amount = Number(next.amount || 0);
-      const paidAmount = Number(next.paidAmount || 0);
-
       if (field === "amount" || field === "paidAmount") {
-        if (paidAmount <= 0) {
-          next.paymentStatus = "Pending";
-        } else if (paidAmount >= amount && amount > 0) {
-          next.paymentStatus = "Paid";
-        } else if (paidAmount > 0 && paidAmount < amount) {
-          next.paymentStatus = paidAmount < amount ? "Partial" : "Advance Paid";
-        }
+        next.paymentStatus = getPaymentStatus(next.amount, next.paidAmount);
       }
 
       return next;
@@ -119,6 +131,14 @@ const ExpenseForm = ({
         [field]: "",
       }));
     }
+  };
+
+  const handleFormattedNumberChange = (field, value) => {
+    const rawValue = removeCommas(value);
+
+    if (!/^\d*$/.test(rawValue)) return;
+
+    handleChange(field, rawValue);
   };
 
   const handleCategorySelect = (value) => {
@@ -192,22 +212,13 @@ const ExpenseForm = ({
       const amount = Number(formData.amount || 0);
       const paidAmount = Number(formData.paidAmount || 0);
 
-      let paymentStatus = formData.paymentStatus;
-      if (paidAmount <= 0) {
-        paymentStatus = "Pending";
-      } else if (paidAmount >= amount) {
-        paymentStatus = "Paid";
-      } else if (paidAmount > 0 && paidAmount < amount) {
-        paymentStatus = "Partial";
-      }
-
       const payload = {
         ...formData,
         itemName: formData.itemName.trim(),
         category: formData.category.trim(),
         amount,
         paidAmount,
-        paymentStatus,
+        paymentStatus: getPaymentStatus(amount, paidAmount),
         vendor: formData.vendor.trim(),
         notes: formData.notes.trim(),
       };
@@ -227,10 +238,10 @@ const ExpenseForm = ({
   const selectedCategoryValue =
     categoryMode === "custom" ? CUSTOM_CATEGORY_VALUE : formData.category || "";
 
-  const dueAmount =
-    Number(formData.amount || 0) - Number(formData.paidAmount || 0) > 0
-      ? Number(formData.amount || 0) - Number(formData.paidAmount || 0)
-      : 0;
+  const dueAmount = Math.max(
+    Number(formData.amount || 0) - Number(formData.paidAmount || 0),
+    0,
+  );
 
   return (
     <form
@@ -304,10 +315,12 @@ const ExpenseForm = ({
           Total Amount
         </label>
         <input
-          type="number"
-          min="0"
-          value={formData.amount}
-          onChange={(e) => handleChange("amount", e.target.value)}
+          type="text"
+          inputMode="numeric"
+          value={formatNumberWithCommas(formData.amount)}
+          onChange={(e) =>
+            handleFormattedNumberChange("amount", e.target.value)
+          }
           placeholder="Enter total amount"
           className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition ${
             errors.amount
@@ -325,10 +338,12 @@ const ExpenseForm = ({
           Paid Amount
         </label>
         <input
-          type="number"
-          min="0"
-          value={formData.paidAmount}
-          onChange={(e) => handleChange("paidAmount", e.target.value)}
+          type="text"
+          inputMode="numeric"
+          value={formatNumberWithCommas(formData.paidAmount)}
+          onChange={(e) =>
+            handleFormattedNumberChange("paidAmount", e.target.value)
+          }
           placeholder="Enter paid amount"
           className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition ${
             errors.paidAmount
@@ -352,7 +367,7 @@ const ExpenseForm = ({
         <div className="rounded-xl bg-slate-50 p-3">
           <p className="text-xs text-slate-500">Due Amount</p>
           <p className="mt-1 text-sm font-semibold text-red-600">
-            ₹{Number(dueAmount || 0).toLocaleString("en-IN")}
+            ₹{formatNumberWithCommas(dueAmount)}
           </p>
         </div>
       </div>
