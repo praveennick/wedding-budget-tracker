@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import FilterBar from "../components/FilterBar";
 import CategoryChart from "../components/CategoryChart";
 import MonthlyChart from "../components/MonthlyChart";
+import PaymentStatusChart from "../components/PaymentStatusChart";
 import MonthlySummarySection from "../components/MonthlySummarySection";
 import VendorSummarySection from "../components/VendorSummarySection";
 import PaymentStatusSummarySection from "../components/PaymentStatusSummarySection";
@@ -205,6 +206,7 @@ const Reports = ({
       <div className="mt-6 space-y-6">
         <CategoryChart data={categorySummary} currency={currency} />
         <MonthlyChart data={monthlySummary} currency={currency} />
+        <PaymentStatusChart data={paymentStatusSummary} currency={currency} />
         <MonthlySummarySection data={monthlySummary} currency={currency} />
         <VendorSummarySection data={vendorSummary} currency={currency} />
         <PaymentStatusSummarySection
