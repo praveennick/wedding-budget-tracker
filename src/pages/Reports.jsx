@@ -1,7 +1,7 @@
-// src/pages/Reports.jsx
 import React, { useMemo, useState } from "react";
 import FilterBar from "../components/FilterBar";
 import CategoryChart from "../components/CategoryChart";
+import MonthlyChart from "../components/MonthlyChart";
 import MonthlySummarySection from "../components/MonthlySummarySection";
 import VendorSummarySection from "../components/VendorSummarySection";
 import PaymentStatusSummarySection from "../components/PaymentStatusSummarySection";
@@ -14,6 +14,7 @@ import {
   getVendorSummary,
 } from "../utils/reportHelpers";
 import { exportWeddingReport } from "../utils/exportReport";
+import { exportWeddingPdfReport } from "../utils/exportPdfReport";
 
 const sortExpenses = (expenses, sortType) => {
   const cloned = [...expenses];
@@ -142,13 +143,22 @@ const Reports = ({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => exportWeddingReport(filteredExpenses, budget)}
-          className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-        >
-          Export
-        </button>
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => exportWeddingReport(filteredExpenses, budget)}
+            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
+            Excel
+          </button>
+          <button
+            type="button"
+            onClick={() => exportWeddingPdfReport(filteredExpenses, budget)}
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
+            PDF
+          </button>
+        </div>
       </div>
 
       <FilterBar
@@ -194,6 +204,7 @@ const Reports = ({
 
       <div className="mt-6 space-y-6">
         <CategoryChart data={categorySummary} currency={currency} />
+        <MonthlyChart data={monthlySummary} currency={currency} />
         <MonthlySummarySection data={monthlySummary} currency={currency} />
         <VendorSummarySection data={vendorSummary} currency={currency} />
         <PaymentStatusSummarySection

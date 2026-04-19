@@ -1,9 +1,9 @@
-// src/pages/Dashboard.jsx
 import React, { useMemo, useState } from "react";
 import SummaryCard from "../components/SummaryCard";
 import CategoryAccordion from "../components/CategoryAccordion";
 import ExpenseItem from "../components/ExpenseItem";
 import FilterBar from "../components/FilterBar";
+import DuePaymentWidgets from "../components/DuePaymentWidgets";
 import { formatCurrency } from "../utils/formatCurrency";
 import { getGroupedExpensesArray } from "../utils/groupExpenses";
 import {
@@ -71,6 +71,7 @@ const Dashboard = ({
     if (selectedCategory !== "All") {
       result = result.filter((item) => item.category === selectedCategory);
     }
+
     if (selectedPaymentStatus !== "All") {
       result = result.filter(
         (item) => item.paymentStatus === selectedPaymentStatus,
@@ -90,7 +91,13 @@ const Dashboard = ({
     }
 
     return sortExpenses(result, selectedSort);
-  }, [expenses, searchText, selectedCategory, selectedSort]);
+  }, [
+    expenses,
+    searchText,
+    selectedCategory,
+    selectedSort,
+    selectedPaymentStatus,
+  ]);
 
   const groupedExpenses = useMemo(
     () => getGroupedExpensesArray(filteredExpenses),
@@ -143,6 +150,10 @@ const Dashboard = ({
           }
           textClass={remainingBudget < 0 ? "text-red-700" : "text-emerald-700"}
         />
+      </div>
+
+      <div className="mt-6">
+        <DuePaymentWidgets expenses={expenses} currency={currency} />
       </div>
 
       <div className="mt-6">
